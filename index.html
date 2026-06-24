@@ -1,0 +1,923 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sherah — AI Travel Fairness Companion</title>
+<style>
+
+  :root {
+    --cream: #F6EFE3;
+    --cream-deep: #EFE5D2;
+    --card: #FFFCF6;
+    --ink: #20221A;
+    --muted: #6B6B58;
+    --teal: #2B5E52;
+    --teal-dark: #16352D;
+    --teal-tint: #DCE8E0;
+    --terra: #C9703D;
+    --terra-tint: #F3DFCE;
+    --gold: #B8862E;
+    --border: #E5DCC4;
+    --bad: #B5483D;
+    --bad-tint: #F2DCD8;
+    --good: #2B5E52;
+    --warn: #B8862E;
+    --sky: #16352D;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+
+  body {
+    font-family: 'Helvetica Neue', Arial, sans-serif;
+    background: var(--cream);
+    color: var(--ink);
+    line-height: 1.5;
+    overflow-x: hidden;
+  }
+
+  .serif { font-family: Georgia, 'Times New Roman', serif; }
+
+  [data-lang-it] { display: none !important; }
+  html.lang-it [data-lang-it] { display: inline !important; }
+  html.lang-it [data-lang-it].block { display: block !important; }
+  html.lang-it [data-lang-it].iflex { display: flex !important; }
+  html.lang-it [data-lang-en] { display: none !important; }
+
+  a { color: inherit; }
+
+  ::selection { background: var(--terra); color: var(--cream); }
+
+  /* ================= NAV ================= */
+  .nav {
+    position: sticky; top: 0; z-index: 100;
+    background: rgba(246,239,227,0.92);
+    backdrop-filter: blur(8px);
+    border-bottom: 1px solid var(--border);
+  }
+  .nav-inner {
+    max-width: 1140px; margin: 0 auto; padding: 18px 28px;
+    display: flex; align-items: center; justify-content: space-between;
+  }
+  .nav-brand { font-family: Georgia, serif; font-weight: 700; font-size: 22px; color: var(--teal-dark); }
+  .nav-brand .dot { color: var(--terra); }
+  .nav-links { display: flex; align-items: center; gap: 26px; }
+  .nav-links a { text-decoration: none; font-size: 14px; color: var(--ink); font-weight: 500; margin-right: 26px; }
+  .nav-links a:last-of-type { margin-right: 0; }
+  .nav-links a:hover { color: var(--terra); }
+  .lang-toggle { display: flex; border: 1px solid var(--teal); border-radius: 30px; overflow: hidden; }
+  .lang-toggle button { border: none; background: transparent; padding: 6px 14px; font-size: 13px; font-weight: 600; color: var(--teal-dark); cursor: pointer; font-family: inherit; }
+  .lang-toggle button.active { background: var(--teal); color: var(--cream); }
+
+  /* ================= HERO / SKY ================= */
+  .skyhero {
+    position: relative;
+    background: linear-gradient(180deg, var(--sky) 0%, #1d4438 55%, var(--teal) 100%);
+    color: #FFFFFF;
+    overflow: hidden;
+    padding-bottom: 40px;
+  }
+
+  .stars { position: absolute; inset: 0; z-index: 0; }
+  .star {
+    position: absolute;
+    width: 3px; height: 3px;
+    background: rgba(246,239,227,0.55);
+    border-radius: 50%;
+    animation: twinkle 4s ease-in-out infinite;
+  }
+  @keyframes twinkle { 0%,100% { opacity: 0.2; } 50% { opacity: 0.9; } }
+
+  .plane {
+    position: absolute;
+    font-size: 30px;
+    opacity: 0.45;
+    filter: drop-shadow(0 0 6px rgba(0,0,0,0.18));
+    animation: driftPlane 30s linear infinite;
+  }
+  @keyframes driftPlane {
+    0% { transform: translate(-5%, 0) rotate(28deg); opacity: 0; }
+    8% { opacity: 0.55; }
+    92% { opacity: 0.55; }
+    100% { transform: translate(115%, -60px) rotate(28deg); opacity: 0; }
+  }
+
+  .hero-content {
+    position: relative; z-index: 2;
+    max-width: 1140px; margin: 0 auto; padding: 80px 28px 0;
+  }
+
+  .eyebrow {
+    display: inline-flex; align-items: center; gap: 8px;
+    font-size: 12.5px; letter-spacing: 1.8px; text-transform: uppercase;
+    color: var(--terra); font-weight: 700; margin-bottom: 22px;
+  }
+  .eyebrow::before { content: ""; width: 7px; height: 7px; border-radius: 50%; background: var(--terra); display: inline-block; box-shadow: 0 0 0 4px rgba(201,112,61,0.2); }
+
+  .hero-content h1 {
+    font-size: 58px; line-height: 1.1; font-weight: 700; max-width: 760px;
+    font-family: Georgia, serif;
+  }
+  .hero-content h1 em { font-style: normal; color: #E8A55C; }
+  .hero-content .sub {
+    margin-top: 22px; font-size: 18.5px; color: #C9D6CC; max-width: 580px; line-height: 1.6;
+  }
+
+  .search-panel {
+    position: relative; z-index: 2;
+    max-width: 1140px; margin: 56px auto 0; padding: 0 28px;
+  }
+  .search-card {
+    background: var(--card);
+    border-radius: 22px;
+    padding: 30px 30px 26px;
+    box-shadow: 0 24px 50px -24px rgba(22,53,45,0.30);
+    position: relative;
+  }
+  .search-card::before {
+    content: "";
+    position: absolute; left: 0; right: 0; top: 0;
+    height: 5px;
+    background: repeating-linear-gradient(90deg, var(--terra) 0 14px, transparent 14px 24px);
+    border-radius: 22px 22px 0 0;
+    opacity: 0.7;
+  }
+
+  .search-grid {
+    display: grid;
+    grid-template-columns: 1.1fr auto 1.1fr 1fr 1fr 0.9fr auto;
+    gap: 14px;
+    align-items: end;
+  }
+  .swap-icon {
+    width: 38px; height: 38px;
+    border-radius: 50%;
+    background: var(--teal-tint);
+    color: var(--teal-dark);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 16px;
+    margin-bottom: 2px;
+    cursor: default;
+  }
+
+  .field { position: relative; }
+  .field label {
+    display: block; font-size: 11px; font-weight: 700; letter-spacing: 0.6px;
+    text-transform: uppercase; color: var(--muted); margin-bottom: 7px;
+  }
+  .field input {
+    width: 100%; padding: 13px 14px; border: 1.5px solid var(--border);
+    border-radius: 10px; font-size: 15px; font-family: inherit;
+    background: var(--cream); color: var(--ink);
+  }
+  .field input:focus { outline: none; border-color: var(--teal); background: var(--card); }
+  .field input::placeholder { color: #A9A48A; }
+
+  .autocomplete {
+    position: absolute; top: 100%; left: 0; right: 0;
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    margin-top: 6px;
+    box-shadow: 0 14px 30px -10px rgba(0,0,0,0.18);
+    z-index: 20;
+    overflow: hidden;
+    display: none;
+    max-height: 220px;
+    overflow-y: auto;
+  }
+  .autocomplete.show { display: block; }
+  .ac-item { padding: 10px 14px; font-size: 14px; cursor: pointer; display: flex; gap: 8px; align-items: center; }
+  .ac-item:hover, .ac-item.hl { background: var(--teal-tint); }
+  .ac-item .accode { font-family: 'Courier New', monospace; font-weight: 700; color: var(--teal-dark); font-size: 12.5px; width: 32px; }
+
+  #searchBtn {
+    background: var(--terra); color: var(--cream);
+    border: none; border-radius: 12px; padding: 13px 22px;
+    font-weight: 700; font-size: 14.5px; cursor: pointer; font-family: inherit;
+    white-space: nowrap;
+    transition: transform 0.12s ease;
+  }
+  #searchBtn:hover { transform: translateY(-1px); }
+  #searchBtn:active { transform: translateY(0); }
+  #searchBtn:disabled { opacity: 0.7; cursor: default; }
+
+  .price-field { position: relative; }
+  .price-field input { padding-left: 26px; }
+  .price-field .curr { position: absolute; left: 13px; top: 38px; color: var(--muted); font-size: 14px; }
+
+  @media (max-width: 980px) {
+    .search-grid { grid-template-columns: 1fr; }
+    .swap-icon { display: none; }
+  }
+
+  .searching-overlay {
+    display: none;
+    padding: 30px 10px 6px;
+    text-align: center;
+  }
+  .searching-overlay.show { display: block; }
+  .flight-path-svg { width: 100%; max-width: 480px; height: 60px; margin: 0 auto 10px; display: block; }
+  .searching-overlay .stext { font-size: 14px; color: var(--muted); font-style: italic; }
+
+  /* ================= MEANING ================= */
+  .meaning {
+    max-width: 1140px; margin: 0 auto; padding: 90px 28px;
+    display: grid; grid-template-columns: 1fr 1fr; gap: 60px; align-items: center;
+  }
+  .meaning-word {
+    background: var(--teal-dark); color: var(--cream);
+    border-radius: 24px; padding: 48px 44px;
+  }
+  .meaning-word .ar { font-size: 52px; margin-bottom: 6px; font-family: Georgia, serif; }
+  .meaning-word .translit { font-size: 15px; letter-spacing: 1px; text-transform: uppercase; color: var(--terra); font-weight: 700; margin-bottom: 18px; }
+  .meaning-word p { font-size: 17px; line-height: 1.6; color: #E8E2D0; }
+  .meaning-text h2 { font-size: 30px; margin-bottom: 18px; line-height: 1.3; font-family: Georgia, serif; }
+  .meaning-text p { font-size: 16px; color: var(--muted); line-height: 1.65; margin-bottom: 14px; }
+  .meaning-text strong { color: var(--ink); }
+
+  /* ================= RESULTS ================= */
+  .demo-section { background: var(--card); border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); padding: 70px 0 90px; }
+  .demo-inner { max-width: 1140px; margin: 0 auto; padding: 0 28px; }
+
+  .results-head {
+    display: none;
+    align-items: baseline; justify-content: space-between;
+    margin-bottom: 28px;
+    flex-wrap: wrap; gap: 10px;
+  }
+  .results-head.show { display: flex; }
+  .results-head h2 { font-size: 26px; font-family: Georgia, serif; }
+  .results-head .routeline { font-size: 14px; color: var(--muted); }
+  .results-head .routeline strong { color: var(--ink); font-family: 'Courier New', monospace; }
+
+  .placeholder-state {
+    text-align: center; padding: 70px 20px; color: var(--muted);
+    border: 1.5px dashed var(--border); border-radius: 20px; font-size: 15px;
+    background: repeating-linear-gradient(135deg, rgba(43,94,82,0.025) 0px, rgba(43,94,82,0.025) 12px, transparent 12px, transparent 24px);
+  }
+  .placeholder-state .picon { font-size: 30px; margin-bottom: 14px; opacity: 0.5; }
+
+  .results {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 20px;
+    opacity: 0; transform: translateY(14px);
+    transition: opacity 0.5s ease, transform 0.5s ease;
+  }
+  .results.visible { opacity: 1; transform: translateY(0); }
+
+  .result-card {
+    background: var(--cream);
+    border: 1px solid var(--border);
+    border-radius: 18px;
+    padding: 26px 26px 24px;
+    position: relative;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+  }
+  .result-card:hover { transform: translateY(-3px); box-shadow: 0 16px 30px -16px rgba(43,94,82,0.25); }
+
+  .result-card .rhead { display: flex; align-items: center; gap: 12px; margin-bottom: 14px; }
+  .ricon { width: 38px; height: 38px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 17px; font-weight: 700; color: #fff; flex-shrink: 0; }
+  .result-card h3 { font-size: 16px; font-weight: 700; }
+  .result-card .rbody { font-size: 14.5px; color: var(--muted); line-height: 1.55; }
+
+  .verdict-pill { display: inline-flex; align-items: center; gap: 6px; padding: 5px 13px; border-radius: 20px; font-size: 12.5px; font-weight: 700; margin-bottom: 12px; }
+  .verdict-good { background: var(--teal-tint); color: var(--teal-dark); }
+  .verdict-warn { background: var(--terra-tint); color: var(--gold); }
+  .verdict-bad { background: var(--bad-tint); color: var(--bad); }
+
+  .fee-row { display: flex; justify-content: space-between; padding: 7px 0; border-bottom: 1px solid var(--border); font-size: 14px; }
+  .fee-row:last-child { border-bottom: none; }
+  .fee-row .amt { font-weight: 700; }
+  .fee-row.hidden-fee .amt { color: var(--bad); }
+
+  .trust-score { display: flex; align-items: baseline; gap: 8px; margin-bottom: 10px; }
+  .trust-score .num { font-family: Georgia, serif; font-size: 38px; font-weight: 700; color: var(--teal-dark); }
+  .trust-score .max { font-size: 16px; color: var(--muted); }
+  .trust-bar { height: 6px; border-radius: 4px; background: var(--border); margin-bottom: 14px; overflow: hidden; }
+  .trust-bar-fill { height: 100%; border-radius: 4px; background: var(--teal); transition: width 0.6s ease; }
+
+  /* ================= PILLARS ================= */
+  .pillars { max-width: 1140px; margin: 0 auto; padding: 90px 28px; }
+  .pillar-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px; margin-top: 50px; }
+  .pillar-num { font-family: Georgia, serif; font-size: 13px; font-weight: 700; color: var(--terra); letter-spacing: 1px; margin-bottom: 14px; }
+  .pillar-card h3 { font-size: 19px; margin-bottom: 10px; line-height: 1.3; }
+  .pillar-card p { font-size: 14.5px; color: var(--muted); line-height: 1.55; }
+
+  /* ================= FOUNDER ================= */
+  .founder { background: var(--teal-dark); color: var(--cream); padding: 70px 0; }
+  .founder-inner { max-width: 1140px; margin: 0 auto; padding: 0 28px; display: flex; align-items: center; gap: 50px; }
+  .founder-badge { width: 90px; height: 90px; border-radius: 50%; background: var(--terra); flex-shrink: 0; display: flex; align-items: center; justify-content: center; font-family: Georgia, serif; font-size: 34px; font-weight: 700; color: var(--cream); }
+  .founder-text h3 { font-size: 24px; margin-bottom: 8px; font-family: Georgia, serif; }
+  .founder-text p { font-size: 16px; color: #DCE8E0; line-height: 1.6; max-width: 680px; }
+  .founder-link {
+    display: inline-flex; align-items: center;
+    margin-top: 16px;
+    padding: 9px 20px;
+    background: rgba(255,255,255,0.12);
+    border: 1px solid rgba(255,255,255,0.3);
+    border-radius: 30px;
+    color: #FFFFFF; text-decoration: none;
+    font-size: 14px; font-weight: 600;
+    transition: background 0.15s ease;
+  }
+  .founder-link:hover { background: rgba(255,255,255,0.22); }
+
+  /* ================= FOOTER ================= */
+  footer { max-width: 1140px; margin: 0 auto; padding: 50px 28px; display: flex; justify-content: space-between; align-items: center; font-size: 14px; color: var(--muted); }
+  footer .fbrand { font-family: Georgia, serif; font-weight: 700; color: var(--ink); }
+
+  .section-head { text-align: center; max-width: 640px; margin: 0 auto 0; }
+  .section-head .eyebrow { justify-content: center; color: var(--terra); }
+  .section-head h2 { font-size: 36px; margin-bottom: 14px; font-family: Georgia, serif; }
+  .section-head p { color: var(--muted); font-size: 17px; line-height: 1.6; }
+
+  @media (max-width: 860px) {
+    .hero-content h1 { font-size: 36px; }
+    .meaning { grid-template-columns: 1fr; gap: 32px; }
+    .results { grid-template-columns: 1fr; }
+    .pillar-grid { grid-template-columns: 1fr 1fr; }
+    .founder-inner { flex-direction: column; text-align: center; gap: 24px; }
+    footer { flex-direction: column; gap: 12px; text-align: center; }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    * { animation: none !important; transition: none !important; }
+  }
+
+</style>
+</head>
+<body>
+
+<nav class="nav">
+  <div class="nav-inner">
+    <div class="nav-brand">Sherah<span class="dot">.</span></div>
+    <div class="nav-links">
+      <a href="#search" data-lang-en>Try the demo</a>
+      <a href="#search" data-lang-it>Prova la demo</a>
+      <a href="#pillars" data-lang-en>What it does</a>
+      <a href="#pillars" data-lang-it>Cosa fa</a>
+      <a href="#founder" data-lang-en>Founder</a>
+      <a href="#founder" data-lang-it>Fondatrice</a>
+      <div class="lang-toggle">
+        <button id="btnEN" class="active">EN</button>
+        <button id="btnIT">IT</button>
+      </div>
+    </div>
+  </div>
+</nav>
+
+<section class="skyhero">
+  <div class="stars" id="starField"></div>
+  <span class="plane" style="top:20%; animation-delay:0s;">&#9992;</span>
+  <span class="plane" style="top:48%; animation-delay:10s;">&#9992;</span>
+  <span class="plane" style="top:70%; animation-delay:19s;">&#9992;</span>
+
+  <div class="hero-content">
+    <div class="eyebrow">
+      <span data-lang-en>AI Travel Fairness Companion — Prototype</span>
+      <span data-lang-it>Compagno AI per la Trasparenza di Viaggio — Prototipo</span>
+    </div>
+
+    <h1 data-lang-en>Before you book,<br>Sherah tells you what <em>nobody else will.</em></h1>
+    <h1 data-lang-it>Prima di prenotare,<br>Sherah ti dice quello che <em>nessun altro ti dirà.</em></h1>
+
+    <p class="sub" data-lang-en>Type in any route and any airline — Sherah checks fairness, timing, trust, and your rights, live.</p>
+    <p class="sub" data-lang-it>Digita qualsiasi rotta e qualsiasi compagnia aerea — Sherah verifica equità, tempistica, fiducia e i tuoi diritti, in tempo reale.</p>
+  </div>
+
+  <div class="search-panel" id="search">
+    <div class="search-card">
+      <div class="search-grid">
+        <div class="field">
+          <label data-lang-en>From</label>
+          <label data-lang-it>Da</label>
+          <input type="text" id="fromInput" placeholder="Naples, Rome, anywhere…" autocomplete="off">
+          <div class="autocomplete" id="fromAC"></div>
+        </div>
+        <div class="swap-icon" id="swapBtn" title="Swap">&#8644;</div>
+        <div class="field">
+          <label data-lang-en>To</label>
+          <label data-lang-it>A</label>
+          <input type="text" id="toInput" placeholder="Dubai, Cairo, anywhere…" autocomplete="off">
+          <div class="autocomplete" id="toAC"></div>
+        </div>
+        <div class="field">
+          <label data-lang-en>Travel date</label>
+          <label data-lang-it>Data di viaggio</label>
+          <input type="date" id="dateInput">
+        </div>
+        <div class="field">
+          <label data-lang-en>Airline</label>
+          <label data-lang-it>Compagnia</label>
+          <input type="text" id="airlineInput" placeholder="Type any airline…" autocomplete="off">
+          <div class="autocomplete" id="airlineAC"></div>
+        </div>
+        <div class="field price-field">
+          <label data-lang-en>Price shown</label>
+          <label data-lang-it>Prezzo</label>
+          <span class="curr">€</span>
+          <input type="number" id="priceInput" placeholder="420" min="20" step="1">
+        </div>
+        <button id="searchBtn">
+          <span data-lang-en>Check this trip</span>
+          <span data-lang-it>Verifica</span>
+        </button>
+      </div>
+
+      <div class="searching-overlay" id="searchingOverlay">
+        <svg class="flight-path-svg" viewBox="0 0 480 60" id="flightPathSvg">
+          <path d="M 20 45 Q 240 -10 460 45" fill="none" stroke="#D9D2BE" stroke-width="2" stroke-dasharray="4 6"/>
+          <path id="flightPathDraw" d="M 20 45 Q 240 -10 460 45" fill="none" stroke="#C9703D" stroke-width="2.5" stroke-dasharray="700" stroke-dashoffset="700"/>
+          <circle cx="20" cy="45" r="4" fill="#2B5E52"/>
+          <circle cx="460" cy="45" r="4" fill="#C9703D"/>
+          <text id="planeGlyph" x="20" y="40" font-size="24">&#9992;</text>
+        </svg>
+        <div class="stext">
+          <span data-lang-en>Cross-checking fares, fees, and your rights…</span>
+          <span data-lang-it>Verifica di tariffe, commissioni e diritti…</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="meaning" id="meaning">
+  <div class="meaning-word">
+    <div class="translit">SHARH — SHERAH</div>
+    <p data-lang-en>From the Arabic root <em>sh-r-ḥ</em>: to explain, to clarify, to open something up so what was hidden becomes understandable.</p>
+    <p data-lang-it>Dalla radice araba <em>sh-r-ḥ</em>: spiegare, chiarire, aprire qualcosa affinché ciò che era nascosto diventi comprensibile.</p>
+  </div>
+  <div class="meaning-text">
+    <h2 data-lang-en>A name that explains what it does.</h2>
+    <h2 data-lang-it>Un nome che spiega cosa fa.</h2>
+    <p data-lang-en>Sherah doesn't just mean "fairness." It means the act of <strong>taking something hidden — a fee, a price gap, a legal right — and explaining it clearly.</strong> That's exactly what the product does, at every step of a trip.</p>
+    <p data-lang-it>Sherah non significa solo "equità." Significa l'atto di <strong>prendere qualcosa di nascosto — una commissione, una differenza di prezzo, un diritto legale — e spiegarlo con chiarezza.</strong> È esattamente ciò che il prodotto fa, in ogni fase di un viaggio.</p>
+  </div>
+</section>
+
+<section class="demo-section">
+  <div class="demo-inner">
+
+    <div class="results-head" id="resultsHead">
+      <h2 data-lang-en>Sherah's verdict</h2>
+      <h2 data-lang-it>Il verdetto di Sherah</h2>
+      <div class="routeline" id="routeLine"></div>
+    </div>
+
+    <div id="placeholderState" class="placeholder-state">
+      <div class="picon">&#9992;&#65039;</div>
+      <span data-lang-en>Enter any route and airline above, then click "Check this trip" to see Sherah's four-pillar verdict.</span>
+      <span data-lang-it>Inserisci rotta e compagnia qui sopra, poi clicca "Verifica" per vedere il verdetto di Sherah.</span>
+    </div>
+
+    <div class="results" id="resultsGrid">
+      <div class="result-card">
+        <div class="rhead">
+          <div class="ricon" style="background:var(--teal)">€</div>
+          <h3><span data-lang-en>Is this price fair?</span><span data-lang-it>Il prezzo è equo?</span></h3>
+        </div>
+        <div class="rbody" id="priceResult"></div>
+      </div>
+
+      <div class="result-card">
+        <div class="rhead">
+          <div class="ricon" style="background:var(--terra)">&#9201;</div>
+          <h3><span data-lang-en>When should I go?</span><span data-lang-it>Quando dovrei partire?</span></h3>
+        </div>
+        <div class="rbody" id="timingResult"></div>
+      </div>
+
+      <div class="result-card">
+        <div class="rhead">
+          <div class="ricon" style="background:var(--terra)">&#10003;</div>
+          <h3><span data-lang-en>Can I trust this company?</span><span data-lang-it>Posso fidarmi?</span></h3>
+        </div>
+        <div class="rbody" id="trustResult"></div>
+      </div>
+
+      <div class="result-card">
+        <div class="rhead">
+          <div class="ricon" style="background:var(--teal)">!</div>
+          <h3><span data-lang-en>What if it's cancelled?</span><span data-lang-it>E se viene cancellato?</span></h3>
+        </div>
+        <div class="rbody" id="rightsResult"></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="pillars" id="pillars">
+  <div class="section-head" style="margin-bottom:0;">
+    <div class="eyebrow">
+      <span data-lang-en>&#9992; How Sherah works</span>
+      <span data-lang-it>&#9992; Come funziona Sherah</span>
+    </div>
+    <h2 data-lang-en>Four questions, answered before you pay.</h2>
+    <h2 data-lang-it>Quattro domande, risposte prima che tu paghi.</h2>
+  </div>
+  <div class="pillar-grid">
+    <div class="pillar-card">
+      <div class="pillar-num">01</div>
+      <h3 data-lang-en>Price fairness</h3>
+      <h3 data-lang-it>Equità del prezzo</h3>
+      <p data-lang-en>A clean, anonymized re-check of your fare, plus a plain-language breakdown of every hidden fee.</p>
+      <p data-lang-it>Una verifica pulita e anonima della tua tariffa, più una spiegazione chiara di ogni commissione nascosta.</p>
+    </div>
+    <div class="pillar-card">
+      <div class="pillar-num">02</div>
+      <h3 data-lang-en>Smart timing</h3>
+      <h3 data-lang-it>Tempistica intelligente</h3>
+      <p data-lang-en>Not just cheap dates — the real reason behind them, explained in one sentence you can act on.</p>
+      <p data-lang-it>Non solo date economiche, ma il motivo reale dietro di esse, spiegato in una frase concreta.</p>
+    </div>
+    <div class="pillar-card">
+      <div class="pillar-num">03</div>
+      <h3 data-lang-en>Company trust score</h3>
+      <h3 data-lang-it>Punteggio di fiducia</h3>
+      <p data-lang-en>A fairness score for any airline, hotel, or OTA — built from real compensation and rebooking patterns.</p>
+      <p data-lang-it>Un punteggio di equità per ogni compagnia aerea, hotel o OTA, basato su dati reali di rimborsi e riprenotazioni.</p>
+    </div>
+    <div class="pillar-card">
+      <div class="pillar-num">04</div>
+      <h3 data-lang-en>Your rights, instantly</h3>
+      <h3 data-lang-it>I tuoi diritti, all'istante</h3>
+      <p data-lang-en>The moment a flight is cancelled, Sherah tells you exactly what you're owed — and whether to refuse the voucher.</p>
+      <p data-lang-it>Nel momento in cui un volo viene cancellato, Sherah ti dice esattamente cosa ti è dovuto — e se rifiutare il voucher.</p>
+    </div>
+  </div>
+</section>
+
+<section class="founder" id="founder">
+  <div class="founder-inner">
+    <div class="founder-badge">MA</div>
+    <div class="founder-text">
+      <h3 data-lang-en>Mona Al-Rozzi — Founder</h3>
+      <h3 data-lang-it>Mona Al-Rozzi — Fondatrice</h3>
+      <p data-lang-en>5+ years of experience in the travel industry, flights &amp; hotels · Data Science &amp; AI, Università degli Studi di Napoli Federico II · Previously built and scaled CryCare, an AI health venture incorporated in Delaware.</p>
+      <p data-lang-it>5+ anni di esperienza nel settore travel, voli e hotel · Laurea in Data Science e Intelligenza Artificiale, Università degli Studi di Napoli Federico II · In precedenza ha costruito CryCare, una startup AI nel settore salute, incorporata in Delaware.</p>
+      <a href="https://www.linkedin.com/in/mona-alrozzi-81b42b267/" target="_blank" rel="noopener" class="founder-link">
+        <span data-lang-en>Connect on LinkedIn</span>
+        <span data-lang-it>Connettiti su LinkedIn</span>
+        &nbsp;&#8599;
+      </a>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="fbrand">Sherah.</div>
+  <div>
+    <span data-lang-en>Let's talk — </span>
+    <span data-lang-it>Parliamone — </span>
+    <a href="mailto:monaalrozzi99@gmail.com" style="color:var(--teal-dark);font-weight:700;text-decoration:none;">monaalrozzi99@gmail.com</a>
+  </div>
+  <div data-lang-en>Prototype · 2026</div>
+  <div data-lang-it>Prototipo · 2026</div>
+</footer>
+
+<script>
+const btnEN = document.getElementById('btnEN');
+const btnIT = document.getElementById('btnIT');
+function setLang(lang) {
+  document.documentElement.classList.toggle('lang-it', lang === 'it');
+  btnEN.classList.toggle('active', lang === 'en');
+  btnIT.classList.toggle('active', lang === 'it');
+  if (window.lastResult) renderResults(window.lastResult, lang);
+}
+btnEN.addEventListener('click', () => setLang('en'));
+btnIT.addEventListener('click', () => setLang('it'));
+
+const starField = document.getElementById('starField');
+for (let i = 0; i < 50; i++) {
+  const s = document.createElement('div');
+  s.className = 'star';
+  s.style.left = Math.random() * 100 + '%';
+  s.style.top = Math.random() * 70 + '%';
+  s.style.animationDelay = (Math.random() * 4) + 's';
+  starField.appendChild(s);
+}
+
+const CITIES = [
+  { code: "NAP", name: { en: "Naples", it: "Napoli" }, country: { en: "Italy", it: "Italia" } },
+  { code: "ROM", name: { en: "Rome", it: "Roma" }, country: { en: "Italy", it: "Italia" } },
+  { code: "MIL", name: { en: "Milan", it: "Milano" }, country: { en: "Italy", it: "Italia" } },
+  { code: "VCE", name: { en: "Venice", it: "Venezia" }, country: { en: "Italy", it: "Italia" } },
+  { code: "DXB", name: { en: "Dubai", it: "Dubai" }, country: { en: "UAE", it: "Emirati Arabi" } },
+  { code: "AUH", name: { en: "Abu Dhabi", it: "Abu Dhabi" }, country: { en: "UAE", it: "Emirati Arabi" } },
+  { code: "CAI", name: { en: "Cairo", it: "Il Cairo" }, country: { en: "Egypt", it: "Egitto" } },
+  { code: "RUH", name: { en: "Riyadh", it: "Riyadh" }, country: { en: "Saudi Arabia", it: "Arabia Saudita" } },
+  { code: "JED", name: { en: "Jeddah", it: "Jeddah" }, country: { en: "Saudi Arabia", it: "Arabia Saudita" } },
+  { code: "DOH", name: { en: "Doha", it: "Doha" }, country: { en: "Qatar", it: "Qatar" } },
+  { code: "BEY", name: { en: "Beirut", it: "Beirut" }, country: { en: "Lebanon", it: "Libano" } },
+  { code: "AMM", name: { en: "Amman", it: "Amman" }, country: { en: "Jordan", it: "Giordania" } },
+  { code: "TUN", name: { en: "Tunis", it: "Tunisi" }, country: { en: "Tunisia", it: "Tunisia" } },
+  { code: "IST", name: { en: "Istanbul", it: "Istanbul" }, country: { en: "Turkey", it: "Turchia" } },
+  { code: "JFK", name: { en: "New York", it: "New York" }, country: { en: "USA", it: "USA" } },
+  { code: "LHR", name: { en: "London", it: "Londra" }, country: { en: "UK", it: "Regno Unito" } },
+  { code: "CDG", name: { en: "Paris", it: "Parigi" }, country: { en: "France", it: "Francia" } },
+  { code: "BCN", name: { en: "Barcelona", it: "Barcellona" }, country: { en: "Spain", it: "Spagna" } },
+  { code: "ATH", name: { en: "Athens", it: "Atene" }, country: { en: "Greece", it: "Grecia" } },
+  { code: "GZA", name: { en: "Gaza", it: "Gaza" }, country: { en: "Palestine", it: "Palestina" } },
+];
+
+const KNOWN_AIRLINES = [
+  { name: "AirNova", score: 8.4 },
+  { name: "Gulf Crest Air", score: 6.1 },
+  { name: "MedJet", score: 4.8 },
+  { name: "Wego Air", score: 7.9 },
+  { name: "Emirates", score: 8.9 },
+  { name: "Qatar Airways", score: 8.7 },
+  { name: "Egyptair", score: 6.4 },
+  { name: "ITA Airways", score: 6.8 },
+  { name: "Turkish Airlines", score: 7.6 },
+  { name: "Ryanair", score: 4.2 },
+];
+
+function hashStr(str) {
+  let h = 0;
+  for (let i = 0; i < str.length; i++) { h = (h * 31 + str.charCodeAt(i)) >>> 0; }
+  return h;
+}
+
+function getAirlineProfile(name) {
+  const clean = name.trim();
+  const found = KNOWN_AIRLINES.find(a => a.name.toLowerCase() === clean.toLowerCase());
+  if (found) return found;
+  const h = hashStr(clean.toLowerCase());
+  const score = Math.round((4 + (h % 600) / 100) * 10) / 10;
+  return { name: clean || "Unknown Airline", score };
+}
+
+function getBaseFare(from, to) {
+  const key = (from + "|" + to).toLowerCase();
+  const h = hashStr(key);
+  return 120 + (h % 660);
+}
+
+function getTimingTip(from, to, lang) {
+  const days = { en: ["Tuesday", "Wednesday", "Thursday"], it: ["martedì", "mercoledì", "giovedì"] };
+  const seasons = {
+    en: ["October–November", "March–April", "January–February", "late September", "early June"],
+    it: ["ottobre–novembre", "marzo–aprile", "gennaio–febbraio", "fine settembre", "inizio giugno"]
+  };
+  const h = hashStr((from + to).toLowerCase());
+  return { day: days[lang][h % days[lang].length], season: seasons[lang][h % seasons[lang].length] };
+}
+
+function isEUDeparture(from) {
+  const euCities = ["naples", "napoli", "rome", "roma", "milan", "milano", "venice", "venezia", "paris", "parigi", "barcelona", "barcellona", "athens", "atene", "london", "londra"];
+  return euCities.includes(from.trim().toLowerCase());
+}
+
+function wireAutocomplete(inputId, acId) {
+  const input = document.getElementById(inputId);
+  const ac = document.getElementById(acId);
+  let hlIndex = -1;
+  let currentMatches = [];
+
+  function renderList(matches) {
+    currentMatches = matches;
+    hlIndex = -1;
+    if (matches.length === 0) { ac.classList.remove('show'); ac.innerHTML = ''; return; }
+    const lang = document.documentElement.classList.contains('lang-it') ? 'it' : 'en';
+    ac.innerHTML = matches.map((c, i) =>
+      `<div class="ac-item" data-idx="${i}"><span class="accode">${c.code}</span><span>${c.name[lang]}, ${c.country[lang]}</span></div>`
+    ).join('');
+    ac.classList.add('show');
+    ac.querySelectorAll('.ac-item').forEach(el => {
+      el.addEventListener('mousedown', (e) => {
+        e.preventDefault();
+        const idx = parseInt(el.getAttribute('data-idx'));
+        const lang2 = document.documentElement.classList.contains('lang-it') ? 'it' : 'en';
+        input.value = currentMatches[idx].name[lang2];
+        ac.classList.remove('show');
+      });
+    });
+  }
+
+  input.addEventListener('input', () => {
+    const val = input.value.trim().toLowerCase();
+    if (!val) { ac.classList.remove('show'); return; }
+    const lang = document.documentElement.classList.contains('lang-it') ? 'it' : 'en';
+    const matches = CITIES.filter(c =>
+      c.name[lang].toLowerCase().startsWith(val) || c.code.toLowerCase().startsWith(val)
+    ).slice(0, 6);
+    renderList(matches);
+  });
+
+  input.addEventListener('keydown', (e) => {
+    const items = ac.querySelectorAll('.ac-item');
+    if (!ac.classList.contains('show') || items.length === 0) return;
+    if (e.key === 'ArrowDown') { e.preventDefault(); hlIndex = Math.min(hlIndex + 1, items.length - 1); }
+    else if (e.key === 'ArrowUp') { e.preventDefault(); hlIndex = Math.max(hlIndex - 1, 0); }
+    else if (e.key === 'Enter') {
+      e.preventDefault();
+      if (hlIndex >= 0) {
+        const lang2 = document.documentElement.classList.contains('lang-it') ? 'it' : 'en';
+        input.value = currentMatches[hlIndex].name[lang2];
+        ac.classList.remove('show');
+      }
+      return;
+    } else { return; }
+    items.forEach((el, i) => el.classList.toggle('hl', i === hlIndex));
+  });
+
+  input.addEventListener('blur', () => setTimeout(() => ac.classList.remove('show'), 120));
+}
+wireAutocomplete('fromInput', 'fromAC');
+wireAutocomplete('toInput', 'toAC');
+
+function wireAirlineAutocomplete() {
+  const input = document.getElementById('airlineInput');
+  const ac = document.getElementById('airlineAC');
+  input.addEventListener('input', () => {
+    const val = input.value.trim().toLowerCase();
+    if (!val) { ac.classList.remove('show'); return; }
+    const matches = KNOWN_AIRLINES.filter(a => a.name.toLowerCase().includes(val)).slice(0, 6);
+    if (matches.length === 0) { ac.classList.remove('show'); return; }
+    ac.innerHTML = matches.map(a => `<div class="ac-item"><span>${a.name}</span></div>`).join('');
+    ac.classList.add('show');
+    ac.querySelectorAll('.ac-item').forEach((el, i) => {
+      el.addEventListener('mousedown', (e) => {
+        e.preventDefault();
+        input.value = matches[i].name;
+        ac.classList.remove('show');
+      });
+    });
+  });
+  input.addEventListener('blur', () => setTimeout(() => ac.classList.remove('show'), 120));
+}
+wireAirlineAutocomplete();
+
+document.getElementById('swapBtn').addEventListener('click', () => {
+  const f = document.getElementById('fromInput');
+  const t = document.getElementById('toInput');
+  const tmp = f.value; f.value = t.value; t.value = tmp;
+});
+
+function computeVerdict(from, to, price) {
+  const base = getBaseFare(from, to);
+  const diff = price - base;
+  const pctDiff = Math.round((diff / base) * 100);
+  let verdict, hiddenFee;
+  if (pctDiff <= 8) { verdict = "good"; hiddenFee = 0; }
+  else if (pctDiff <= 25) { verdict = "warn"; hiddenFee = Math.round(base * 0.06); }
+  else { verdict = "bad"; hiddenFee = Math.round(base * 0.11); }
+  return { base, pctDiff, verdict, hiddenFee };
+}
+
+function renderResults(state, lang) {
+  const { from, to, airline, price, calc, travelDate } = state;
+  const L = lang;
+  const airlineProfile = getAirlineProfile(airline);
+
+  let dateStr = '';
+  if (travelDate) {
+    const d = new Date(travelDate + 'T00:00:00');
+    const locale = L === 'it' ? 'it-IT' : 'en-GB';
+    dateStr = d.toLocaleDateString(locale, { day: 'numeric', month: 'short', year: 'numeric' });
+  }
+
+  document.getElementById('routeLine').innerHTML =
+    `<strong>${from.toUpperCase()} → ${to.toUpperCase()}</strong> &nbsp;·&nbsp; ${airlineProfile.name}` +
+    (dateStr ? ` &nbsp;·&nbsp; &#9992; ${dateStr}` : '') +
+    ` &nbsp;·&nbsp; €${price}`;
+
+  const priceEl = document.getElementById('priceResult');
+  let verdictLabel, verdictClass;
+  if (calc.verdict === "good") { verdictLabel = L === 'it' ? "Prezzo equo" : "Fair price"; verdictClass = "verdict-good"; }
+  else if (calc.verdict === "warn") { verdictLabel = L === 'it' ? "Leggermente sopra mercato" : "Slightly above market"; verdictClass = "verdict-warn"; }
+  else { verdictLabel = L === 'it' ? "Prezzo gonfiato" : "Inflated price"; verdictClass = "verdict-bad"; }
+  let html = `<span class="verdict-pill ${verdictClass}">${verdictLabel}</span>`;
+  html += `<div class="fee-row"><span>${L === 'it' ? 'Tariffa di base verificata' : 'Verified base fare'}</span><span class="amt">€${calc.base}</span></div>`;
+  html += `<div class="fee-row"><span>${L === 'it' ? 'Prezzo mostrato a te' : 'Price shown to you'}</span><span class="amt">€${price}</span></div>`;
+  if (calc.hiddenFee > 0) html += `<div class="fee-row hidden-fee"><span>${L === 'it' ? 'Probabile commissione nascosta' : 'Likely hidden fee'}</span><span class="amt">+€${calc.hiddenFee}</span></div>`;
+  priceEl.innerHTML = html;
+
+  const t = getTimingTip(from, to, L);
+  let timingHtml = '';
+  if (travelDate) {
+    const d = new Date(travelDate + 'T00:00:00');
+    const dayNames = {
+      en: ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'],
+      it: ['domenica','lunedì','martedì','mercoledì','giovedì','venerdì','sabato']
+    };
+    const chosenDay = dayNames[L][d.getDay()];
+    const isWeekend = d.getDay() === 5 || d.getDay() === 6 || d.getDay() === 0;
+    const dayMatch = chosenDay.toLowerCase() === t.day.toLowerCase();
+    if (dayMatch) {
+      timingHtml = `<p style="margin-bottom:10px;">${L === 'it'
+        ? `Ottima scelta — <strong>${chosenDay}</strong> è di solito uno dei giorni più economici per questa rotta.`
+        : `Good pick — <strong>${chosenDay}</strong> is usually one of the cheaper days for this route.`}</p>`;
+    } else if (isWeekend) {
+      timingHtml = `<p style="margin-bottom:10px;">${L === 'it'
+        ? `Stai partendo di <strong>${chosenDay}</strong>. Spostarti a <strong>${t.day}</strong> potrebbe abbassare il prezzo.`
+        : `You're flying on a <strong>${chosenDay}</strong>. Shifting to <strong>${t.day}</strong> could lower the price.`}</p>`;
+    } else {
+      timingHtml = `<p style="margin-bottom:10px;">${L === 'it'
+        ? `Parti di <strong>${chosenDay}</strong>. Per questa rotta, <strong>${t.day}</strong> tende ad essere il giorno più conveniente.`
+        : `You're flying on a <strong>${chosenDay}</strong>. For this route, <strong>${t.day}</strong> tends to be the cheapest day.`}</p>`;
+    }
+  } else {
+    timingHtml = `<p style="margin-bottom:10px;">${L === 'it'
+      ? `Per questa rotta, <strong>${t.day}</strong> tende ad avere prezzi più bassi rispetto al fine settimana.`
+      : `For this route, <strong>${t.day}</strong> tends to price lower than weekend departures.`}</p>`;
+  }
+  timingHtml += `<p>${L === 'it'
+    ? `Il periodo più conveniente dell'anno è generalmente <strong>${t.season}</strong>.`
+    : `The cheapest window of the year is typically <strong>${t.season}</strong>.`}</p>`;
+  document.getElementById('timingResult').innerHTML = timingHtml;
+
+  const scorePct = Math.round(airlineProfile.score * 10);
+  document.getElementById('trustResult').innerHTML = `
+    <div class="trust-score"><span class="num">${airlineProfile.score.toFixed(1)}</span><span class="max">/10</span></div>
+    <div class="trust-bar"><div class="trust-bar-fill" style="width:${scorePct}%"></div></div>
+    <p>${L === 'it'
+      ? `Basato su pattern simulati di rimborsi e riprenotazioni per <strong>${airlineProfile.name}</strong>.`
+      : `Based on simulated compensation and rebooking patterns for <strong>${airlineProfile.name}</strong>.`}</p>
+  `;
+
+  const rightsEl = document.getElementById('rightsResult');
+  const eu = isEUDeparture(from);
+  rightsEl.innerHTML = eu ? `
+    <p style="margin-bottom:10px;">${L === 'it'
+      ? `Questa rotta parte dall'UE, quindi rientra nel <strong>Regolamento EU261</strong>.`
+      : `This route departs from the EU, so it falls under <strong>EU261</strong>.`}</p>
+    <p>${L === 'it'
+      ? `Se cancellato con meno di 14 giorni di preavviso, hai diritto a un rimborso fino a <strong>€400–600</strong> — non solo un voucher.`
+      : `If cancelled with less than 14 days' notice, you're entitled to up to <strong>€400–600</strong> — not just a voucher.`}</p>
+  ` : `
+    <p style="margin-bottom:10px;">${L === 'it'
+      ? `Questa rotta può rientrare nella <strong>Convenzione di Montreal</strong>, a seconda della compagnia.`
+      : `This route may fall under the <strong>Montreal Convention</strong>, depending on the operating carrier.`}</p>
+    <p>${L === 'it'
+      ? `Verifica sempre se ti viene offerto un rimborso in contanti prima di accettare un voucher.`
+      : `Always check whether a cash refund is offered before accepting a travel voucher.`}</p>
+  `;
+}
+
+const searchBtn = document.getElementById('searchBtn');
+const resultsGrid = document.getElementById('resultsGrid');
+const placeholderState = document.getElementById('placeholderState');
+const resultsHead = document.getElementById('resultsHead');
+const searchingOverlay = document.getElementById('searchingOverlay');
+const flightPathDraw = document.getElementById('flightPathDraw');
+const planeGlyph = document.getElementById('planeGlyph');
+
+function animatePlaneAlongPath(durationMs) {
+  const path = document.getElementById('flightPathSvg').querySelector('path');
+  const totalLen = path.getTotalLength ? path.getTotalLength() : 480;
+  const start = performance.now();
+  function step(now) {
+    const elapsed = now - start;
+    const pct = Math.min(elapsed / durationMs, 1);
+    const pt = path.getPointAtLength ? path.getPointAtLength(pct * totalLen) : { x: 20 + pct * 440, y: 45 };
+    planeGlyph.setAttribute('x', pt.x - 8);
+    planeGlyph.setAttribute('y', pt.y + 5);
+    if (pct < 1) requestAnimationFrame(step);
+  }
+  requestAnimationFrame(step);
+}
+
+searchBtn.addEventListener('click', () => {
+  const from = document.getElementById('fromInput').value.trim() || 'Naples';
+  const to = document.getElementById('toInput').value.trim() || 'Dubai';
+  const airline = document.getElementById('airlineInput').value.trim() || 'AirNova';
+  const travelDate = document.getElementById('dateInput').value || '';
+  const priceRaw = parseFloat(document.getElementById('priceInput').value);
+  const base = getBaseFare(from, to);
+  const price = isNaN(priceRaw) ? base : priceRaw;
+
+  const calc = computeVerdict(from, to, price);
+  const state = { from, to, airline, price, calc, travelDate };
+  window.lastResult = state;
+
+  const currentLang = document.documentElement.classList.contains('lang-it') ? 'it' : 'en';
+
+  placeholderState.style.display = 'none';
+  resultsGrid.classList.remove('visible');
+  resultsHead.classList.remove('show');
+
+  searchBtn.disabled = true;
+  searchingOverlay.classList.add('show');
+  flightPathDraw.style.transition = 'none';
+  flightPathDraw.setAttribute('stroke-dashoffset', '700');
+  void flightPathDraw.offsetWidth;
+  flightPathDraw.style.transition = 'stroke-dashoffset 1100ms ease';
+  flightPathDraw.setAttribute('stroke-dashoffset', '0');
+  animatePlaneAlongPath(1100);
+
+  setTimeout(() => {
+    searchingOverlay.classList.remove('show');
+    renderResults(state, currentLang);
+    resultsGrid.classList.add('visible');
+    resultsHead.classList.add('show');
+    searchBtn.disabled = false;
+    document.querySelector('.demo-section').scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }, 1150);
+});
+</script>
+
+</body>
+</html>
